@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auricular Ear Seed Protocol</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --bg:              #F5F2ED;
+      --sidebar-bg:      #1A1916;
+      --sidebar-text:    #E0DCD3;
+      --sidebar-muted:   #908C86;
+      --accent:          #8AB490;
+      --accent-dark:     #6B9B72;
+      --card-bg:         #FFFFFF;
+      --border:          #E2DDD5;
+      --text:            #1A1916;
+      --text-body:       #3D3A34;
+      --text-muted:      #7D7A73;
+      /* elements */
+      --wood:   #6B8F6B;
+      --fire:   #B85C4A;
+      --earth:  #C4943A;
+      --metal:  #7D8C8A;
+      --water:  #5B7FA3;
+      /* metals */
+      --gold-bg:     #FEF4D9;
+      --gold-border: #E0B455;
+      --gold-text:   #7A5000;
+      --gold-dot:    #C9920A;
+      --silver-bg:   #EBF0F5;
+      --silver-border: #9AB5C9;
+      --silver-text:  #2A4F68;
+      --silver-dot:   #6A8EA3;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 36px 28px 48px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-brand {
+      margin-bottom: 36px;
+    }
+    .sidebar-brand h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+    .sidebar-brand p {
+      font-size: 0.78rem;
+      color: var(--sidebar-muted);
+      line-height: 1.6;
+    }
+
+    /* Form elements */
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sidebar-muted);
+      margin-bottom: 7px;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 8px;
+      color: var(--sidebar-text);
+      padding: 9px 13px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .form-input::placeholder { color: rgba(224,220,211,0.35); }
+    .form-input:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.09);
+    }
+    .form-select option {
+      background: #2A2826;
+      color: #E0DCD3;
+    }
+
+    /* Select wrapper — chevron icon */
+    .select-wrap {
+      position: relative;
+    }
+    .select-wrap::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--sidebar-muted);
+      pointer-events: none;
+    }
+    .select-wrap select { padding-right: 30px; }
+
+    /* Date row */
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr 1.8fr;
+      gap: 7px;
+    }
+
+    /* Handedness radio */
+    .radio-group { display: flex; gap: 8px; }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 9px 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 8px;
+      flex: 1;
+      font-size: 0.88rem;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .radio-label input[type="radio"] {
+      width: 15px; height: 15px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+    .radio-label:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(138,180,144,0.12);
+    }
+
+    /* Generate button */
+    .btn-generate {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 12px;
+    }
+    .btn-generate:hover:not(:disabled) { background: var(--accent-dark); }
+    .btn-generate:active:not(:disabled) { transform: scale(0.98); }
+    .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Sidebar footer note */
+    .sidebar-note {
+      margin-top: auto;
+      padding-top: 28px;
+      font-size: 0.7rem;
+      color: rgba(144,140,134,0.6);
+      line-height: 1.6;
+    }
+
+    /* ── Main content ── */
+    .content {
+      padding: 52px 52px 80px;
+    }
+
+    /* ── Placeholder ── */
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      color: var(--text-muted);
+      gap: 20px;
+    }
+    .placeholder-icon {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: rgba(107,143,107,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .placeholder p {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      max-width: 280px;
+    }
+
+    /* ── Loading ── */
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 18px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 34px; height: 34px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error ── */
+    .error {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 12px;
+      padding: 18px 22px;
+      color: #991B1B;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    /* ── Results ── */
+    .results { display: none; }
+
+    /* Protocol header */
+    .protocol-header { margin-bottom: 32px; }
+
+    .protocol-for {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .principle-text {
+      font-size: 1.6rem;
+      font-weight: 300;
+      line-height: 1.4;
+      color: var(--text);
+      margin-bottom: 12px;
+      letter-spacing: -0.015em;
+    }
+    .principle-text .sep {
+      color: var(--text-muted);
+      margin: 0 6px;
+      font-weight: 200;
+    }
+    .day-master-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.05);
+      border-radius: 100px;
+      padding: 4px 14px;
+    }
+
+    /* Section heading */
+    .section-heading {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* Description */
+    .description-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 32px;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      color: var(--text-body);
+    }
+
+    /* ── Element bars ── */
+    .elements-section { margin-bottom: 36px; }
+
+    .element-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 9px;
+    }
+    .element-name {
+      width: 48px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .element-bar-track {
+      flex: 1;
+      height: 7px;
+      background: rgba(0,0,0,0.06);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .element-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 0.7s cubic-bezier(.4,0,.2,1);
+    }
+    .element-state {
+      width: 76px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Ear protocol ── */
+    .protocol-section { margin-bottom: 36px; }
+
+    .ear-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .ear-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .ear-card-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ear-indicator {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .ear-card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .ear-count {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .ear-card-body { padding: 10px 8px; }
+
+    /* Point cards */
+    .point-card {
+      padding: 11px 12px;
+      border-radius: 9px;
+      transition: background 0.15s;
+    }
+    .point-card:hover { background: rgba(0,0,0,0.025); }
+
+    .point-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+    .point-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .bilateral-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.06);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 5px;
+      vertical-align: middle;
+      letter-spacing: 0.04em;
+    }
+    .metal-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 100px;
+      border-width: 1px;
+      border-style: solid;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .metal-chip.gold   { background: var(--gold-bg);   border-color: var(--gold-border);   color: var(--gold-text); }
+    .metal-chip.silver { background: var(--silver-bg); border-color: var(--silver-border); color: var(--silver-text); }
+    .metal-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+    }
+    .metal-chip.gold   .metal-dot { background: var(--gold-dot); }
+    .metal-chip.silver .metal-dot { background: var(--silver-dot); }
+
+    .point-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .point-action {
+      font-size: 0.8rem;
+      color: var(--text-body);
+      line-height: 1.55;
+    }
+    .point-body-ref {
+      margin-top: 5px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.4;
+    }
+    .point-note {
+      margin-top: 6px;
+      font-size: 0.7rem;
+      color: #826030;
+      background: #FEF8EC;
+      border-radius: 6px;
+      padding: 4px 8px;
+      line-height: 1.5;
+    }
+
+    /* Divider between master points and constitutional points */
+    .section-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 12px;
+      opacity: 0.7;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .content { padding: 36px 24px 60px; }
+      .ear-columns { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ══ Sidebar: form ══════════════════════════════════ -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>Ear Seed Protocol</h1>
+        <p>Enter your birth details to generate a personalised auricular ear seed protocol based on your Four Pillars constitution.</p>
+      </div>
+
+      <form id="protocol-form" novalidate>
+
+        <div class="form-group">
+          <label class="form-label" for="inp-name">Your Name</label>
+          <input class="form-input" type="text" id="inp-name" placeholder="Optional" autocomplete="given-name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <div class="date-row">
+            <div class="select-wrap">
+              <select class="form-select" id="inp-day" required aria-label="Day">
+                <option value="">Day</option>
+              </select>
+            </div>
+            <div class="select-wrap">
+              <select class="form-select" id="inp-month" required aria-label="Month">
+                <option value="">Month</option>
+              </select>
+            </div>
+            <div class="select-wrap">
+              <select class="form-select" id="inp-year" required aria-label="Year">
+                <option value="">Year</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inp-hour">Time of Birth</label>
+          <div class="select-wrap">
+            <select class="form-select" id="inp-hour" aria-label="Hour">
+              <option value="">Unknown / not sure</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Handedness</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="handedness" value="right" checked> Right
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="handedness" value="left"> Left
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-generate" type="submit" id="btn-generate">
+          Generate Protocol
+        </button>
+
+      </form>
+
+      <p class="sidebar-note">
+        Protocol is derived from your Four Pillars (Ba Zi) elemental constitution using Yuan Source and Luo channel auricular representations.
+      </p>
+    </aside>
+
+    <!-- ══ Main content ═══════════════════════════════════ -->
+    <main class="content">
+
+      <!-- Placeholder -->
+      <div class="placeholder" id="state-placeholder">
+        <div class="placeholder-icon">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <circle cx="13" cy="13" r="11" stroke="#6B8F6B" stroke-width="1.5"/>
+            <circle cx="13" cy="13" r="4.5" stroke="#6B8F6B" stroke-width="1.2" stroke-dasharray="2 2"/>
+            <circle cx="13" cy="13" r="1.5" fill="#6B8F6B"/>
+          </svg>
+        </div>
+        <p>Enter your birth details on the left and your personalised ear seed protocol will appear here.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading" id="state-loading">
+        <div class="spinner"></div>
+        <span>Calculating your protocol…</span>
+      </div>
+
+      <!-- Error -->
+      <div class="error" id="state-error"></div>
+
+      <!-- Results -->
+      <div class="results" id="state-results"></div>
+
+    </main>
+  </div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────────────────────
+    // In production the HTML is served by the same FastAPI server, so we call
+    // the same origin. Locally (file://) we fall back to localhost:8000.
+    const API_BASE = location.protocol === 'file:'
+      ? 'http://localhost:8000'
+      : '';
+
+    // ── Constants ───────────────────────────────────────────────────────────
+    const MONTHS = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ];
+
+    const ELEM_COLOR = {
+      Wood: '#6B8F6B', Fire: '#B85C4A', Earth: '#C4943A',
+      Metal: '#7D8C8A', Water: '#5B7FA3'
+    };
+
+    const STATE_PCT = { Absent: 4, Low: 28, Balanced: 58, Excess: 100 };
+
+    const INTENT_LABEL = { tonify: 'Nourish', sedate: 'Regulate', regulate: 'Balance' };
+
+    const UNIVERSAL = new Set(['Shen Men', 'Point Zero', 'Thalamus Point', 'Sympathetic Autonomic']);
+
+    // ── Populate form dropdowns ─────────────────────────────────────────────
+    (function populateSelects() {
+      const dayEl = document.getElementById('inp-day');
+      for (let d = 1; d <= 31; d++) dayEl.add(new Option(d, d));
+
+      const monEl = document.getElementById('inp-month');
+      MONTHS.forEach((m, i) => monEl.add(new Option(m, i + 1)));
+
+      const yrEl = document.getElementById('inp-year');
+      const now = new Date().getFullYear();
+      for (let y = now; y >= 1920; y--) yrEl.add(new Option(y, y));
+
+      const hrEl = document.getElementById('inp-hour');
+      const ampm = h => {
+        if (h === 0)  return '12:00 am  (Midnight)';
+        if (h === 12) return '12:00 pm  (Noon)';
+        const suffix = h < 12 ? 'am' : 'pm';
+        const h12    = h <= 12 ? h : h - 12;
+        return `${String(h12).padStart(2,'0')}:00 ${suffix}`;
+      };
+      for (let h = 0; h < 24; h++) hrEl.add(new Option(ampm(h), h));
+    })();
+
+    // ── UI state ────────────────────────────────────────────────────────────
+    function showState(name) {
+      ['placeholder','loading','error','results'].forEach(id => {
+        const el = document.getElementById(`state-${id}`);
+        if (id === 'placeholder' || id === 'loading') {
+          el.style.display = el.id.includes(name) ? 'flex' : 'none';
+        } else {
+          el.style.display = el.id.includes(name) ? 'block' : 'none';
+        }
+      });
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────
+    function render(data, name) {
+      const { constitution, principle, description, day_master, protocol } = data;
+      const el = document.getElementById('state-results');
+
+      // Principle — split on ' · ' and rejoin with styled separators
+      const principleHtml = principle
+        .split(' · ')
+        .map(part => `<span>${part}</span>`)
+        .join('<span class="sep"> · </span>');
+
+      // Element bars
+      const elems = ['Wood','Fire','Earth','Metal','Water'];
+      const barsHtml = elems.map(e => {
+        const state = constitution[e] || 'Balanced';
+        const pct   = STATE_PCT[state] ?? 58;
+        const col   = ELEM_COLOR[e];
+        return `
+          <div class="element-row">
+            <div class="element-name" style="color:${col}">${e}</div>
+            <div class="element-bar-track">
+              <div class="element-bar-fill" style="width:${pct}%;background:${col}"></div>
+            </div>
+            <div class="element-state">${state}</div>
+          </div>`;
+      }).join('');
+
+      // Build a single point card
+      function pointCard(p, showBilateral) {
+        const metalClass   = p.metal;
+        const metalLabel   = p.metal.charAt(0).toUpperCase() + p.metal.slice(1);
+        const intentLabel  = INTENT_LABEL[p.intent] || p.intent;
+        const isMaster     = UNIVERSAL.has(p.name);
+        const bilBadge     = (showBilateral && p.ear === 'bilateral')
+          ? '<span class="bilateral-badge">both</span>' : '';
+
+        // Body point reference
+        let bodyRef = '';
+        if (p.point_type === 'organ') {
+          if (p.intent === 'tonify' && p.body_point_tonify) {
+            bodyRef = `<div class="point-body-ref">Yuan Source → ${p.body_point_tonify}</div>`;
+          } else if ((p.intent === 'sedate' || p.intent === 'regulate') && p.body_point_sedate) {
+            bodyRef = `<div class="point-body-ref">Luo Point → ${p.body_point_sedate}</div>`;
+          }
+        }
+
+        // Truncate long exception notes
+        const noteText = p.note ? p.note.split('(')[0].trim().replace(/\.$/, '') : '';
+        const noteHtml = noteText
+          ? `<div class="point-note">${noteText}</div>` : '';
+
+        const metaLabel = isMaster
+          ? `${intentLabel} · Master point`
+          : intentLabel;
+
+        return `
+          <div class="point-card">
+            <div class="point-top">
+              <div class="point-name">${p.name}${bilBadge}</div>
+              <div class="metal-chip ${metalClass}">
+                <div class="metal-dot"></div>${metalLabel}
+              </div>
+            </div>
+            <div class="point-meta">${metaLabel}</div>
+            <div class="point-action">${p.action}</div>
+            ${bodyRef}${noteHtml}
+          </div>`;
+      }
+
+      // Build one ear column (left or right — bilateral points appear in both)
+      function buildEarCol(side) {
+        const pts = protocol.points.filter(p =>
+          p.ear === side || p.ear === 'bilateral'
+        );
+        const masters = pts.filter(p => UNIVERSAL.has(p.name));
+        const constit = pts.filter(p => !UNIVERSAL.has(p.name));
+        const count   = pts.length;
+
+        let inner = masters.map(p => pointCard(p, false)).join('');
+        if (constit.length) {
+          inner += '<div class="section-divider"></div>';
+          inner += constit.map(p => pointCard(p, true)).join('');
+        }
+        const title = side.charAt(0).toUpperCase() + side.slice(1);
+        return `
+          <div class="ear-card">
+            <div class="ear-card-header">
+              <div class="ear-indicator"></div>
+              <div class="ear-card-title">${title} Ear</div>
+              <div class="ear-count">${count} point${count !== 1 ? 's' : ''}</div>
+            </div>
+            <div class="ear-card-body">${inner}</div>
+          </div>`;
+      }
+
+      const displayName = (name && name.trim()) ? name.trim() : 'Your';
+      const handLabel   = protocol.handedness.charAt(0).toUpperCase() + protocol.handedness.slice(1);
+
+      el.innerHTML = `
+        <div class="protocol-header">
+          <div class="protocol-for">${displayName}'s Protocol</div>
+          <div class="principle-text">${principleHtml}</div>
+          <div class="day-master-pill">Day Master: ${day_master}</div>
+        </div>
+
+        <div class="description-card">${description}</div>
+
+        <div class="elements-section">
+          <div class="section-heading">Five Element Constitution</div>
+          ${barsHtml}
+        </div>
+
+        <div class="protocol-section">
+          <div class="section-heading">Ear Seed Locations &mdash; ${handLabel}-handed</div>
+          <div class="ear-columns">
+            ${buildEarCol('left')}
+            ${buildEarCol('right')}
+          </div>
+        </div>`;
+
+      showState('results');
+    }
+
+    // ── Form submission ─────────────────────────────────────────────────────
+    document.getElementById('protocol-form').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const year  = parseInt(document.getElementById('inp-year').value);
+      const month = parseInt(document.getElementById('inp-month').value);
+      const day   = parseInt(document.getElementById('inp-day').value);
+      const hourRaw = document.getElementById('inp-hour').value;
+      const hour    = hourRaw === '' ? null : parseInt(hourRaw, 10);
+      const handedness = document.querySelector('input[name="handedness"]:checked').value;
+      const name       = document.getElementById('inp-name').value;
+
+      if (!year || !month || !day) {
+        document.getElementById('state-error').textContent =
+          'Please enter your full date of birth (day, month, year).';
+        showState('error');
+        return;
+      }
+
+      showState('loading');
+      document.getElementById('btn-generate').disabled = true;
+
+      try {
+        const resp = await fetch(`${API_BASE}/protocol`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ year, month, day, hour, handedness }),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        render(data, name);
+
+      } catch (err) {
+        document.getElementById('state-error').textContent =
+          `Could not generate protocol: ${err.message}`;
+        showState('error');
+      } finally {
+        document.getElementById('btn-generate').disabled = false;
+      }
+    });
+
+    // Kick off
+    showState('placeholder');
+  </script>
+</body>
+</html>
