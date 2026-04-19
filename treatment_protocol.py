@@ -156,7 +156,10 @@ AURICULAR_POINTS: dict[str, dict] = {
         "liver_exception": True,     # always Silver, always Right — see module docstring
         "body_point_tonify": "LR-3 (Tai Chong — Liver Yuan Source)",
         "body_point_sedate": "LR-5 (Li Gou — Liver Luo connecting point)",
-        "action": "Smooths Liver Qi, regulates emotional flow, supports Liver Blood",
+        # Wood is tonified through movement — LR-3 with Silver promotes free flow of Liver Qi.
+        # This IS the tonification: Wood element receives nourishment by virtue of its movement,
+        # not through substance accumulation as Earth or Water does.
+        "action": "Moves Liver Qi, restores free flow, supports Liver Blood; Wood is nourished through movement",
         "location": "Concha cymba, posterior section",
         "tcm": ["Liver Qi stagnation", "Liver Blood", "smooth Qi", "emotional regulation", "tendons"],
     },
@@ -199,6 +202,7 @@ AURICULAR_POINTS: dict[str, dict] = {
         "body_point_tonify": "HT-7 (Shen Men — Heart Yuan Source)",
         "body_point_sedate": "HT-5 (Tong Li — Heart Luo connecting point)",
         "action": "Calms the Shen, nourishes Heart Blood, regulates Heart rhythm",
+        "action_sedate": "Clears Heart Fire, disperses excess Joy, calms agitation and restlessness",
         "location": "Central concha cavum",
         "tcm": ["Heart Qi", "Shen", "insomnia", "anxiety", "palpitations", "joy"],
     },
@@ -243,6 +247,7 @@ AURICULAR_POINTS: dict[str, dict] = {
         "body_point_tonify": "SP-3 (Tai Bai — Spleen Yuan Source)",
         "body_point_sedate": "SP-4 (Gong Sun — Spleen Luo; corresponds to Interferon Point)",
         "action": "Tonifies Spleen Qi, supports transformation and transportation, nourishes Blood",
+        "action_sedate": "Regulates Spleen Qi, disperses Earth accumulation, resolves Dampness and Phlegm",
         "location": "Concha cymba, medial-superior section",
         "tcm": ["Spleen Qi", "digestion", "Blood production", "intention/Yi", "transformation"],
     },
@@ -252,6 +257,7 @@ AURICULAR_POINTS: dict[str, dict] = {
         "body_point_tonify": "ST-42 (Chong Yang — Stomach Yuan Source)",
         "body_point_sedate": "ST-40 (Feng Long — Stomach Luo; corresponds to Beta-2-Receptor Point)",
         "action": "Harmonises the Stomach, descends rebellious Qi, supports appetite and grounding",
+        "action_sedate": "Disperses Stomach Fire and excess accumulation, resolves Phlegm, redirects rebellious Qi",
         "location": "Concha at antihelix inferior crus / cavum junction",
         "tcm": ["Stomach Qi", "appetite", "nourishment", "descend Qi", "grounding"],
     },
@@ -264,6 +270,7 @@ AURICULAR_POINTS: dict[str, dict] = {
         "body_point_tonify": "LU-9 (Tai Yuan — Lung Yuan Source; influential point for Blood vessels)",
         "body_point_sedate": "LU-7 (Lie Que — Lung Luo; opens Ren Mai)",
         "action": "Tonifies Lung Qi, supports respiration, strengthens Wei Qi, releases held grief",
+        "action_sedate": "Disperses Lung Qi excess, opens chest oppression, releases rigid boundary and suppressed grief",
         "location": "Concha cavum, superior section (CO14)",
         "tcm": ["Lung Qi", "Wei Qi", "grief", "boundary", "respiration", "Corporeal Soul/Po"],
     },
@@ -292,6 +299,7 @@ AURICULAR_POINTS: dict[str, dict] = {
         "body_point_tonify": "KI-3 (Tai Xi — Kidney Yuan Source; nourishes Kidney Yin and Yang)",
         "body_point_sedate": "KI-4 (Da Zhong — Kidney Luo connecting point)",
         "action": "Tonifies Kidney Qi, nourishes Kidney Yin and Yang, replenishes Jing essence",
+        "action_sedate": "Anchors floating Kidney Qi, clears Empty Heat from Kidney Yin deficiency, subdues excess Water",
         "location": "Antihelical body, superior crus, medial section",
         "tcm": ["Kidney Qi", "Kidney Yin", "Kidney Yang", "Jing", "will-power/Zhi", "fear"],
     },
@@ -685,12 +693,17 @@ def _make_protocol_point(
     if not info:
         return None
     ear, metal, note = _resolve_ear(name, intent, handedness)
+    # Pick action text based on intent — sedate/regulate uses action_sedate if available
+    if intent in ("sedate", "regulate") and "action_sedate" in info:
+        action = info["action_sedate"]
+    else:
+        action = info.get("action", "")
     return ProtocolPoint(
         name       = name,
         ear        = ear,
         metal      = metal,
         intent     = intent,
-        action     = info.get("action", ""),
+        action     = action,
         point_type = info.get("type", "functional"),
         note       = note,
     )
@@ -712,14 +725,12 @@ def _make_protocol_point(
 #   → Primary Zang organ point with Silver (Luo body-point correspondence)
 #   → One functional bolster that reinforces the Luo dispersal
 
-# Universal master points — included in every protocol regardless of constitution.
+# Universal master points — two anchor points in every protocol.
 # "regulate" intent → Gold ear for functional points, harmonising rather than
 # strongly tonifying or sedating.
 _UNIVERSAL_POINTS: list[tuple[str, str]] = [
-    ("Shen Men",             "regulate"),
-    ("Point Zero",           "regulate"),
-    ("Thalamus Point",       "regulate"),
-    ("Sympathetic Autonomic","regulate"),
+    ("Shen Men",   "regulate"),
+    ("Point Zero", "regulate"),
 ]
 
 # Primary Zang (Yin) organ per element — the deepest constitutional point.
@@ -964,7 +975,7 @@ def _build_protocol(
     specs: list[tuple[str, str]]  = []   # (point_name, intent)
 
     def add(name: str, intent: str) -> bool:
-        if len(specs) >= 10:
+        if len(specs) >= 8:
             return False
         if name not in seen and name in AURICULAR_POINTS:
             seen.add(name)
@@ -972,7 +983,7 @@ def _build_protocol(
             return True
         return False
 
-    # Phase 1 — Universal master points (always 4)
+    # Phase 1 — Two universal anchor points (always present)
     for name, intent in _UNIVERSAL_POINTS:
         add(name, intent)
 
@@ -984,28 +995,33 @@ def _build_protocol(
     ]
     sorted_elems.sort(key=lambda kv: _extremity(kv[1]), reverse=True)
 
-    # Phase 2 — Primary organ for every imbalanced element
+    # Phase 2 — Primary Zang organ for every imbalanced element.
+    # Wood uses "regulate" (Silver/LR-3) because Wood tonification IS movement —
+    # free flow of Liver Qi nourishes the Wood element. Other elements tonify
+    # via Yuan Source (Gold).
     for element, state in sorted_elems:
         if state in ("Absent", "Low"):
-            add(_PRIMARY_ORGAN[element], "tonify")
+            intent = "regulate" if element == "Wood" else "tonify"
+            add(_PRIMARY_ORGAN[element], intent)
         elif state == "Excess":
             add(_PRIMARY_ORGAN[element], "sedate")
 
-    # Phase 3 — Secondary organ for Absent elements only
-    for element, state in sorted_elems:
-        if state == "Absent":
-            add(_SECONDARY_ORGAN[element], "tonify")
+    # Phase 3 — Secondary organ only when there is exactly one Absent element
+    # (focused protocol: deeper support where the deficiency is most severe).
+    absent_elems = [e for e, s in sorted_elems if s == "Absent"]
+    if len(absent_elems) == 1:
+        add(_SECONDARY_ORGAN[absent_elems[0]], "tonify")
 
-    # Phase 4 — One functional bolster per imbalanced element (most urgent first)
-    for element, state in sorted_elems:
-        if state in ("Absent", "Low"):
-            for bolster in _TONIFY_BOLSTERS[element]:
+    # Phase 4 — One functional bolster for the single highest-priority element only.
+    # Keeps the protocol focused rather than adding bolsters for every imbalance.
+    if sorted_elems:
+        top_element, top_state = sorted_elems[0]
+        if top_state in ("Absent", "Low"):
+            for bolster in _TONIFY_BOLSTERS[top_element]:
                 if add(bolster, "tonify"):
                     break
-        elif state == "Excess":
-            # Diazepam Analogue needs "regulate" intent to activate Gold on
-            # the non-dominant ear (its anxiolytic/sedating function)
-            for bolster in _SEDATE_BOLSTERS[element]:
+        elif top_state == "Excess":
+            for bolster in _SEDATE_BOLSTERS[top_element]:
                 intent = "regulate" if bolster == "Diazepam Analogue" else "sedate"
                 if add(bolster, intent):
                     break
@@ -1059,4 +1075,3 @@ def _build_protocol(
 # Preserve backward-compatible aliases used by tests / api_server
 derive_treatment_principle = _derive_principle
 build_ear_protocol         = _build_protocol
-
